@@ -1,8 +1,11 @@
-var http = require( "http" ),
+var http = require( "./lib/http" ),
 	QueryString = require( "QueryString" ),
-	Growl = require( "./lib/Growl" ).Growl;
+	path = require( "path" ),
+	Growl = require( "./lib/growl" ).Growl;
 
 var TwitterNotify = {
+	frequency: 10000,
+	
 	addSearch: function( term ) {
 		TwitterNotify.search({ term: term, since: 0 });
 	},
@@ -26,11 +29,25 @@ var TwitterNotify = {
 			}
 			TwitterNotify.notify( tweet );
 		});
-		setTimeout( TwitterNotify.search, 10000, search );
+		setTimeout( TwitterNotify.search, TwitterNotify.frequency, search );
 	},
 	
 	notify: function( tweet ) {
-		Growl.notify( tweet.text, { title: tweet.from_user } );
+		var url = tweet.profile_image_url,
+			ext = url.substr( url.lastIndexOf( "." ) ),
+			// TODO:
+			// - figure out where we should store files
+			// - create directory if it doesn't exist
+			// - check if file exists before making an HTTP request
+			// - add ability to delete files
+			file = "/TwitterNotify/" + tweet.from_user + path.extname( url );
+		
+		http.writeFile( url, file, "binary", function() {
+			Growl.notify( tweet.text, {
+				title: tweet.from_user,
+				image: file
+			});
+		});
 	}
 };
 
