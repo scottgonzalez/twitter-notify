@@ -5,7 +5,8 @@ var http = require( "./lib/http" ),
 	Growl = require( "./lib/growl" ).Growl;
 
 // TODO: figure out where we should store files
-var dataDir = "/TwitterNotify";
+var dataDir = "/TwitterNotify",
+	cacheDuration = 24 * 60 * 60 * 1000;
 
 var TwitterNotify = {
 	frequency: 10000,
@@ -42,24 +43,31 @@ var TwitterNotify = {
 			if ( tweet.id > search.since) {
 				search.since = tweet.id;
 			}
-			TwitterNotify.notify( tweet );
+			TwitterNotify.handleTweet( tweet );
 		});
 		setTimeout( TwitterNotify.search, TwitterNotify.frequency, search );
 	},
 	
-	notify: function( tweet ) {
+	handleTweet: function( tweet ) {
 		var url = tweet.profile_image_url,
-			ext = path.extname( url ).toLowerCase(),
-			// TODO:
-			// - check if file exists before making an HTTP request
-			// - add ability to delete files
-			file = dataDir + "/" + tweet.from_user + ext;
-		
-		http.writeFile( url, file, "binary", function() {
-			Growl.notify( tweet.text, {
-				title: tweet.from_user,
-				image: file
-			});
+		ext = path.extname( url ).toLowerCase(),
+		file = dataDir + "/" + tweet.from_user + ext;
+	
+		fs.stat( file, function( err, info ) {
+			if ( err || ( new Date() - new Date(info.mtime) ) > cacheDuration ) {
+				http.writeFile( url, file, "binary", function() {
+					TwitterNotify.notify( tweet.text, tweet.from_user, file );
+				});
+			} else {
+				TwitterNotify.notify( tweet.text, tweet.from_user, file );
+			}
+		});
+	},
+	
+	notify: function( msg, user, img ) {
+		Growl.notify( msg, {
+			title: user,
+			image: img
 		});
 	}
 };
