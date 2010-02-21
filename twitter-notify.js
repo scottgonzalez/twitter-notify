@@ -1,12 +1,16 @@
-var sys = require( "sys" ),
-	http = require( "http" ),
+var http = require( "http" ),
+	QueryString = require( "QueryString" ),
 	Growl = require( "./lib/Growl" ).Growl;
 
 var search = "ncjs",
 	since = 0;
 
 function getTweets() {
-	http.cat("http://search.twitter.com/search.json?q=" + search + "&since_id="+since, function(status, content) {
+	var query = QueryString.stringify({
+		q: search,
+		since_id: since
+	});
+	http.cat( "http://search.twitter.com/search.json?" + query, function( status, content ) {
 		JSON.parse( content ).results.forEach(function( tweet ) {
 			if ( tweet.id > since) {
 				since = tweet.id;
