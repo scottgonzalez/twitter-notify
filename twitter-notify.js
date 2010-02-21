@@ -30,7 +30,7 @@ var TwitterNotify = {
 	},
 	
 	notify: function( tweet ) {
-		Growl.notify( "From " + tweet.from_user + ": " + tweet.text );
+		Growl.notify( tweet.text, { title: tweet.from_user } );
 	}
 };
 
