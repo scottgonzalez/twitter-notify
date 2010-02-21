@@ -7,15 +7,12 @@ var search = "ncjs",
 
 function getTweets() {
 	http.cat("http://search.twitter.com/search.json?q=" + search + "&since_id="+since, function(status, content) {
-		var tweets = JSON.parse( content ),
-			results = tweets[ "results" ],
-			length = results.length;
-		for (var i = length - 1; i >= 0; i--) {
-			if (results[ i ].id > since) {
-				since = results[ i ].id;
+		JSON.parse( content ).results.forEach(function( tweet ) {
+			if ( tweet.id > since) {
+				since = tweet.id;
 			}
-			Growl.notify( "From " + results[ i ].from_user + ": " + results[ i ].text );
-		}
+			Growl.notify( "From " + tweet.from_user + ": " + tweet.text );
+		});
 		setTimeout( getTweets, 10000 );
 	});
 }
