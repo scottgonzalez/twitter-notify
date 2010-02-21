@@ -1,10 +1,25 @@
 var http = require( "./lib/http" ),
 	QueryString = require( "QueryString" ),
+	fs = require( "fs" ),
 	path = require( "path" ),
 	Growl = require( "./lib/growl" ).Growl;
 
+// TODO: figure out where we should store files
+var dataDir = "/TwitterNotify";
+
 var TwitterNotify = {
 	frequency: 10000,
+	
+	init: function() {
+		if ( !path.exists( dataDir ) ) {
+			fs.mkdir( dataDir, 0750	 );
+		}
+		
+		process.stdio.open();
+		process.stdio.addListener( "data", function( input ) {
+			TwitterNotify.addSearch( input.trim() );
+		});
+	},
 	
 	addSearch: function( term ) {
 		TwitterNotify.search({ term: term, since: 0 });
@@ -34,13 +49,11 @@ var TwitterNotify = {
 	
 	notify: function( tweet ) {
 		var url = tweet.profile_image_url,
-			ext = url.substr( url.lastIndexOf( "." ) ),
+			ext = path.extname( url ).toLowerCase(),
 			// TODO:
-			// - figure out where we should store files
-			// - create directory if it doesn't exist
 			// - check if file exists before making an HTTP request
 			// - add ability to delete files
-			file = "/TwitterNotify/" + tweet.from_user + path.extname( url );
+			file = dataDir + "/" + tweet.from_user + ext;
 		
 		http.writeFile( url, file, "binary", function() {
 			Growl.notify( tweet.text, {
@@ -51,7 +64,4 @@ var TwitterNotify = {
 	}
 };
 
-process.stdio.open();
-process.stdio.addListener( "data", function( input ) {
-	TwitterNotify.addSearch( input.trim() );
-});
+TwitterNotify.init();
