@@ -10,6 +10,7 @@ var dataDir = "/TwitterNotify",
 
 var TwitterNotify = {
 	frequency: 10000,
+	searches: {},
 	
 	init: function() {
 		if ( !path.exists( dataDir ) ) {
@@ -23,29 +24,36 @@ var TwitterNotify = {
 	},
 	
 	addSearch: function( term ) {
-		TwitterNotify.search({ term: term, since: 0 });
+		TwitterNotify.searches[ term ] = 0;
+		TwitterNotify.search( term );
 	},
 	
-	search: function( search ) {
+	removeSearch: function( term ) {
+		delete TwitterNotify.searches[ term ];
+	},
+	
+	search: function( term ) {
 		var query = QueryString.stringify({
-			q: search.term,
-			since_id: search.since
+			q: term,
+			since_id: TwitterNotify.searches[ term ]
 		});
 		http.cat( "http://search.twitter.com/search.json?" + query,
 			function( status, content ) {
-				TwitterNotify.handleSearchResponse( search,
+				TwitterNotify.handleSearchResponse( term,
 					JSON.parse( content ).results );
 			});
 	},
 	
-	handleSearchResponse: function( search, tweets ) {
+	handleSearchResponse: function( term, tweets ) {
 		tweets.forEach(function( tweet ) {
-			if ( tweet.id > search.since) {
-				search.since = tweet.id;
+			if ( tweet.id > TwitterNotify.searches[ term ] ) {
+				TwitterNotify.searches[ term ] = tweet.id;
 			}
 			TwitterNotify.handleTweet( tweet );
 		});
-		setTimeout( TwitterNotify.search, TwitterNotify.frequency, search );
+		if ( term in TwitterNotify.searches ) {
+			setTimeout( TwitterNotify.search, TwitterNotify.frequency, term );
+		}
 	},
 	
 	handleTweet: function( tweet ) {
