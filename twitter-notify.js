@@ -2,7 +2,7 @@ var http = require( "./lib/http" ),
 	QueryString = require( "QueryString" ),
 	fs = require( "fs" ),
 	path = require( "path" ),
-	Growl = require( "./lib/growl" ).Growl;
+	Growl = require( "./lib/growl" );
 
 // TODO: figure out where we should store files
 var dataDir = "/TwitterNotify",
